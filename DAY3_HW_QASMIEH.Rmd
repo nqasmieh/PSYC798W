@@ -1,0 +1,73 @@
+---
+title: "Day 3 Homework"
+output: html_document
+---
+
+```{r}
+library(haven)
+SAS.data <- read_sav("QASMIEH_DATASET_PSYC798W.sav")
+```
+
+
+1. Identify a column in your data that *should* be a factor (whether it is or not). Check to see whether R is already treating it as a factor, and if not, convert it into a factor.
+
+```{r}
+is.factor(SAS.data$GROUPAB)
+SAS.data$GROUPAB <- as.factor(SAS.data$GROUPAB)
+is.factor(SAS.data$GROUPAB)
+```
+
+2. What are the levels of the factor? How many occurrences of each level are there in the data?
+   
+```{r}
+levels(SAS.data$GROUPAB)
+summary(SAS.data$GROUPAB)
+```
+
+3. Create a new column that is a numeric "version" of the factor column, using `as.numeric()`. Use `xtabs()` to see how the values of these columns line up.
+
+```{r}
+SAS.data$GROUPAB2 <- as.numeric(SAS.data$GROUPAB)
+xtabs(~GROUPAB + GROUPAB2, SAS.data)
+```
+
+4. Create another column that is a copy of the factor column. Now, recode this new column so that the factor levels have new names. 
+  (e.g., if you have a factor with levels "A" and "B", you could make a new column that had "condition A" and "condition B" as the level names instead)
+
+```{r}
+SAS.data$GROUPAB3 <- SAS.data$GROUPAB
+levels(SAS.data$GROUPAB3) <- c("Community Sample", "Clinical Sample")
+```
+
+5. Change the order of the levels in your new factor, using three different methods:
+  a. `relevel()`
+  b. `reorder()`
+  c. `factor()`
+
+```{r}
+
+SAS.data$GROUPAB4 <- relevel(SAS.data$GROUPAB3, "Clinical Sample")
+xtabs(~GROUPAB3 + GROUPAB4, SAS.data)
+
+SAS.data$GROUPAB5 <- reorder(SAS.data$GROUPAB3, SAS.data$spaicctot)
+
+
+SAS.data$GROUPAB6 <- factor(SAS.data$GROUPAB3, levels = c("Community Sample", "Clinical Sample"))
+
+```
+
+6. Missing values
+  a. Do you have any missing values (NA) in your data?
+  b. Are there any places where you *should* have missing values but they were read into R as some other value?
+  c. If the answer to (b) is "yes", figure out how to read in your data in a way that correctly identifies the missing value "code"
+  d. If you have any NAs in your data, describe why you think those values are missing. Does there appear to be any systematic relationship between missingness and other variables in your data?
+
+```{r}
+summary(SAS.data)
+```
+* a. NA values in teh following variables: Demo_Parent_Race_1:6, Demo_Paren_Over65, Demo_Parent_Illness, Demo_Parent_PriCrGvr, Number_Friends_P Number_Friends_P_RECODE, Making_Friends_P, Keeping_Friends_P, FRIEND_COUNT_P
+* Using summary at first only gave me a limited output in the console. I had to change my options to increase the max lines printed in order for the command to display the summary for the entire dataset. Is there a more elegant way to have R return an index of all the instances of NA values? I imagine there might be a way to use logical operators but I'm not entirely sure. 
+* I also tried is.na.dataframe(SAS.data) but that gave me a gigantic output as well as it went through the entire dataset, line by line.
+
+* b. No, every variable has appropriate values.
+* d. These values are considered missing because of the nature of the survey administration. These questions are administered over qualtrics and for questions in the demographics section, it's possible for a participant to not select any response option at all. But for questions about numbers of friends, it's possible these have NAs because the information was not collected at all by experimenter error and  there is no way to otherwise impute these values. 
