@@ -1,0 +1,55 @@
+---
+title: "Day 4 Homework"
+output: html_document
+---
+
+1. Find some aspect of your data that needs to be combined or merged in some way.  This could be a variety of things:
+  - multiple "sheets" in an Excel
+  - multiple files that should be combined into one data set
+  - properties that need to be merged in to one data set. For example:
+    - you have a table of subject properties (gender, handedness, etc.) that need to be merged into the item-level data
+    - you have other information on countries (population, etc.) that need to be merged in
+  - if you DON'T have this naturally-occurring issue, figure out a way to manufacture it. For example:
+    - split up your data into chunks
+    - make up some new table of information that you want to merge in
+  - Explain (in words) what you are trying to do
+  - Use binding/merging commands to accomplish this
+  - Complete at least ONE example of binding and ONE example of merging
+
+```{r}
+#Reading in data
+library(haven)
+SAS.data <- read_sav("C:/Users/Noor/Desktop/QASMIEH_DATASET_PSYC798W.sav")
+```
+
+* Nothing to merge in this set, so I'll be making 2 dataframes then combining those together. I will make one dataframe of final SAFE scores for teens and another dataframe of final SAFE scores for parents. Upon merging, I will create a single dataframe of only final SAFE scores from both informants along with ID number and master ID and I could use this to compare teen self-report SAFE data with parent report about teen SAFE data. 
+
+* Using CBIND
+```{r}
+#making dataframes of teen SAFE data and parent SAFE data
+SAS.SAFETEEN <- c("MASTER_ID", "SAFE_TOTAL_C")
+SAS.SAFETEENDF <- SAS.data[,SAS.SAFETEEN]
+
+SAS.SAFEPARENTDF <- SAS.data[,"SAFE_TOTAL_P"]
+
+#binding via column because we are sticking together the variable of parent SAFE scores
+SAS.SAFE <- cbind.data.frame(c(SAS.SAFETEENDF, SAS.SAFEPARENTDF))
+SAS.SAFE
+```
+
+
+* Using MERGE
+```{r}
+#making dataframes of teen SAFE data and parent SAFE data
+SAS.SAFETEEN2 <- c("MASTER_ID", "SAFE_TOTAL_C")
+SAS.SAFETEENDF2 <- SAS.data[,SAS.SAFETEEN]
+
+SAS.SAFEPARENT2 <- c("MASTER_ID", "SAFE_TOTAL_P")
+SAS.SAFEPARENTDF2 <- SAS.data[,SAS.SAFEPARENT2]
+
+#merging with MASTER_ID as key 
+SAS.SAFEMERGED <-merge (SAS.SAFETEENDF2, SAS.SAFEPARENTDF2, "MASTER_ID")
+SAS.SAFEMERGED
+```
+
+
