@@ -22,7 +22,7 @@ library(haven)
 SAS.data <- read_sav("C:/Users/Noor/Desktop/QASMIEH_DATASET_PSYC798W.sav")
 ```
 
-* Nothing to merge in this set, so I'll be making 2 dataframes then combining those together. I will make one dataframe of final SAFE scores for teens and another dataframe of final SAFE scores for parents. Upon merging, I will create a single dataframe of only final SAFE scores from both informants along master ID and I could use this to compare teen self-report SAFE data with parent report about teen SAFE data. 
+* Nothing to merge in this set, so I'll be making 2 dataframes then combining those together. I will make one dataframe of final SAFE scores for teens and another dataframe of final SAFE scores for parents. Upon merging, I will create a single dataframe of only final SAFE scores from both informants along with the master ID and I could use this to compare teen self-report SAFE data with parent report about teen SAFE data. 
 
 * Using CBIND
 ```{r}
