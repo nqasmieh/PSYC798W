@@ -1,0 +1,48 @@
+---
+title: "Day 5 Homework"
+output: html_document
+---
+```{r}
+library(haven)
+library(dplyr)
+library(tidyr)
+```
+
+
+0. Reload your data, and re-use the code you already have for getting things formatted nicely (columns renamed, factors relabeled, etc.)
+
+```{r}
+SAS.data <- read_sav("QASMIEH_DATASET_PSYC798W.SAV")
+SAS.data$GROUPAB <- as.factor(SAS.data$GROUPAB)
+```
+
+1. Aggregate (e.g., get mean/median/max/something) of some numerical variable, over one or more factors.  Use `group_by()` plus `summarize()` from the `dplyr` package. You may or may not need to reshape the data first!
+
+```{r}
+#reshaping to long format
+SAS.long <- gather (SAS.data, "Measure", "Response", BDI_C_D:ICU_P_UNEM)
+SAS.long
+
+#trying to look at median total teen SAFE scores across group membership but I'm having trouble getting the code to work because I'm not sure how to specify the argument to yank the right variable
+
+SAFE.total.median <- summarize(group_by(SAS.long, GROUPAB), median = median(SAS.long$Response[SAS.long$Measure=="SAFE_TOTAL_C"], na.rm = TRUE))
+SAFE.total.median
+
+
+```
+
+2. Get your data into "long" (aka "tidy") format, if it isn't already
+
+```{r}
+SAS.long <- gather (SAS.data, "Measure", "Response", BDI_C_D:ICU_P_UNEM)
+SAS.long
+#is there anyway to fill in the range while excluding certain variables? For example in this set, each measure has a "directions" variable that is an artifact of exporting from qualtrics. It serves no purpose in this set so I'm wondering if there's a way I could write a vector that has all the right variables and use that to define the range of gathering
+#I also got the following error message: attributes are not identical across measure variables; they will be dropped; is there anyway I can tell what variables caused this issue? I suspect it has something to do with the demographics based questions since there are mixtures of NAs, characters, and numeric responses for those questions. 
+```
+
+
+
+
+
+
+
