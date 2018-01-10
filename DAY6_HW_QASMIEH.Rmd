@@ -1,0 +1,161 @@
+---
+title: "Day 6 Homework"
+output: html_document
+---
+```{r}
+library(haven)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+0. Reload your data, and re-use the code you already have for getting things formatted nicely (columns renamed, factors relabeled, etc.)
+
+```{r}
+SAS.data <- read_sav("QASMIEH_DATASET_PSYC798W.sav")
+SAS.vector <- c( "MASTER_ID","GROUPAB" ,"SAFE_TOTAL_C", "SAFE_TOTAL_P", "spaicctot","spaicptot",
+                  "TEEN_SAM_COMP_ALL_TASKS", "bdisctot", "bdisptot",     
+                 "TOTALSIAS_P","TOTALSIAS_C", "SPS_TOT_C", "SPS_TOT_P")
+SAS.df <- SAS.data[,SAS.vector]
+SAS.df$GROUPAB <- as.factor(SAS.df$GROUPAB)
+
+SAS.long <- gather (SAS.df, "Measure", "Response", SAFE_TOTAL_C:SPS_TOT_P)
+SAS.long
+  
+```
+
+1. Run TWO DIFFERENT simple analyses or statistical tests, such as linear regression (`lm()`), logistic regression (`glm()`), correlation test (`cor.test()`), t-test (`t.test()`), or non-parametric tests (e.g., `wilcox.test()`).  For each of these:
+  - Describe why you are doing this analysis, i.e., what question is it answering?
+  - I won't judge you on statistical expertise!  (though I will make comments if I think I can be helpful)
+  - Report some key statistics from the analysis, using **inline** code. HINT: outside of an R code chunk, use `r codehere` format.
+  
+```{r}
+#t test comparing teen depression between groups with wide format; are teens in the community group less depressed than the teens in the clinical sample?
+t.test(bdisctot ~ GROUPAB, SAS.df)
+
+#same t test just using the long formatted data
+t.test(SAS.long$Response[SAS.long$Measure=="bdisctot"]~SAS.long$GROUPAB[SAS.long$Measure=="bdisctot"], SAS.long)
+
+
+#Correlation bw two different measures of anxiety completed by the teen; are these two measures of anxiety related? 
+cor.test(SAS.df$SPS_TOT_C, SAS.df$TOTALSIAS_C)
+```
+
+* Teens in the community sample significantly report less symptoms of depression (M=9.40) than teens in the clinical sample(M=18.11), t=-3.12, p <.01. 
+* There is a significant correlation between teen anxiety scores as reported on the Social Phobia Scale and the Social Interaction Anxiety scale, r = 0.8, p <.001.
+
+2. Pick a single numerical variable from your data.  Use `ggplot` to plot a histogram and a density plot (separately).
+   - Try some different values for `binwidth` for the histogram.
+   - Try some different values for `adjust` for the density plot.
+
+```{r}
+histo1<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_histogram()
+
+dens1<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_density()
+
+histo2<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_histogram(binwidth = .25)
+histo3<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_histogram(binwidth = .95)
+
+dens2<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_density(adjust = .10)
+dens3<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_density(adjust = .70)
+
+
+```
+
+3. How does the distribution look?  Try transforming the variable and try to get it to look more normal (i.e., more Gaussian).  If it already looks normal, do something to it to make it look non-normal.
+
+```{r}
+histo4<- ggplot(SAS.df, aes(log(SAFE_TOTAL_C))) + geom_histogram()
+```
+
+4. Is there a factor that you can use to break up this variable into groups of observations?  If not, reshape your data so that there is, or create a factor if necessary.  Then, do the following:
+   - Plot it as a density plot, mapping `color` to the factor
+   - Same, but try using `fill` instead of `color`
+   - Same, using `linetype` instead of `color`
+   - Plot the data as a boxplot, with the factor as `x` and the numerical variable as `y`  HINT: use geom_boxplot
+
+```{r}
+graph1 <- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_density(aes(colour=GROUPAB))
+
+graph2<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_density(aes(fill=GROUPAB))
+
+graph3<- ggplot(SAS.df, aes(SAFE_TOTAL_C)) + geom_density(aes(linetype=GROUPAB))
+
+graph4<- ggplot(SAS.df, aes(GROUPAB, SAFE_TOTAL_C)) + geom_boxplot()
+```
+
+5. Create a bar plot of the cell means of some variable. Steps:
+   - Find a numerical variable and a grouping factor (this can be the same as those chosen above).
+   - Get the mean value of the numerical variable, broken down by the factor.  
+   - Plot this new aggregated data frame, using the "bar" geom.
+   - HINT: use stat = "identity" in the geom_bar() function.
+   
+```{r}
+SAFE.aggregate <- summarize(group_by(SAS.long, GROUPAB), 
+                  meanSAFE = mean(SAS.long$Response[SAS.long$Measure=="SAFE_TOTAL_P"]))
+SAFE.aggregate
+#Able to get it to summarize now, but it's not doing it by group, it's just summarizing the single mean, and not returning the means for each group
+
+ggplot(SAFE.aggregate, aes(GROUPAB, meanSAFE)) + geom_bar(stat=identity)
+
+#Graph didn't work; returned error: Error: object of type 'closure' is not subsettable
+
+```
+   
+6. Create a bar plot that gets means broken down by TWO grouping factors.  For example, if Factor A has levels "red" and "blue" and Factor B has levels "north" and "south", get the cell means of "red north", "red south", "blue north", and "blue south."  
+   - Use the dplyr methods to get these means into a data frame format.
+   - Use the "bar" geom, but map the two variables to different graphical dimension.  One should be the "x" value, but the other should be mapped to some other visual property.
+
+```{r}
+#Adding second factor variable of gender
+SAS.data2 <- read_sav("QASMIEH_DATASET_PSYC798W.sav")
+SAS.data2$Gender <- c("Male", "Female")
+SAS.data2$Gender <- as.factor(SAS.data2$Gender)
+SAS.vector2 <- c("MASTER_ID","GROUPAB" ,"Gender", "SAFE_TOTAL_C", "SAFE_TOTAL_P",   
+                 "spaicctot","spaicptot","TEEN_SAM_COMP_ALL_TASKS", "bdisctot", 
+                 "bdisptot","TOTALSIAS_P","TOTALSIAS_C", "SPS_TOT_C", "SPS_TOT_P")
+
+SAS.df2 <- SAS.data2[,SAS.vector2]
+SAS.df2$GROUPAB <- as.factor(SAS.df2$GROUPAB)
+
+SAS.long2 <- gather (SAS.df2, "Measure", "Response", SAFE_TOTAL_C:SPS_TOT_P)
+SAS.long2
+
+#New aggregate
+SAFE.aggregate2 <- summarize(group_by(SAS.long, GROUPAB, Gender), 
+                  meanSAFE2 = mean(SAS.long$Response[SAS.long$Measure=="SAFE_TOTAL_P"]))
+SAFE.aggregate2
+#Aghrehate data frame is not coming out right, instead of being a matrix
+
+ggplot(SAFE.aggregate2, aes(GROUPAB, meanSAFE2)) + geom_bar(stat=identity)
+#Graph didn't work; returned error: Error: object of type 'closure' is not subsettable
+```
+
+7. Output all of the plots above (from problems 1-6) as a single PDF.
+
+```{r}
+pdf("HW6plots.pdf")
+print(histo1)
+print(histo2)
+print(histo3)
+print(histo4)
+
+print(dens1)
+print(dens2)
+print(dens3)
+
+print(graph1)
+print(graph2)
+print(graph3)
+print(graph4)
+dev.off()
+
+```
+
+8. Is there a better type of visualization for your data?  What numbers would you like to be able to visualize better?  Be as explicit as possible, and write some "pseudo-code" to ilustrate what you think you would like.
+
+* Because most of the analysis with this type of data compares the means of scores, there aren't many ways to visualize these types of comparisons. 
+
+
+
