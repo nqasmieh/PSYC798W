@@ -1,0 +1,128 @@
+---
+title: "Day 7 Homework"
+output: html_document
+---
+
+Find three relationships in your data.  For each relationship, do the following:
+
+1. Verbally articulate the relationship you want to examine with a plot.
+# Is teen self reported physiological arousal related to teen self reported anxiety as measured by the SPAI-C? 
+# Do teens who belong in the clinical sample report having significantly higher arousal than teens in the community sample? 
+# We can also group teens by classifying them along cut off scores (at or above 18) for the SPAI-C, suggesting they have probable social anxiety disorder. I will make a new grouping variable to sort each participant. Are teens who scored above the cut off scores scoring higher on the SAFE than teens who were below the cut off score? 
+
+2. Verbally identify what variables you want to map to each graphical dimension.
+# X axis: teen SPAI-C score; Y axis; teen arousal 
+# X axis: group status; Y axis: teen arousal
+# X axis: SPAI-C cut off group; Y axis: teen SAFE scores
+
+3. Reshape your data as needed.
+
+```{r}
+#libraries
+library(haven)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
+#reading dataset
+SAS.data <- read_sav("QASMIEH_DATASET_PSYC798W.sav")
+
+#making dataframe of only variables of interest
+my.SAS <- c( "MASTER_ID","GROUPAB" ,"SAFE_TOTAL_C","spaicctot","TEEN_SAM_COMP_ALL_TASKS")
+
+SAS.df <- SAS.data[,my.SAS]
+SAS.df$GROUPAB <- as.factor(SAS.df$GROUPAB)
+levels(SAS.df$GROUPAB) <- c("Community sample", "Clinical sample")
+levels(SAS.df$GROUPAB)
+
+
+#making new variable
+SAS.df$SPAICCUTOFF <- NA
+SAS.df$SPAICCUTOFF[SAS.df$spaicctot<18] <- "Below cutoff"
+SAS.df$SPAICCUTOFF[SAS.df$spaicctot>=18] <- "Above cutoff"
+SAS.df$SPAICCUTOFF<- as.factor(SAS.df$SPAICCUTOFF)
+summary(SAS.df)
+
+#reordering so factors variables are first
+SAS.df <- SAS.df[c(1,2,6,3,4,5)]
+
+#creating long dataset
+SAS.long <- gather (SAS.df, "Measure", "Response", SAFE_TOTAL_C:TEEN_SAM_COMP_ALL_TASKS)
+SAS.long
+
+```
+
+4. Use ggplot2 to create your graphs.
+
+```{r}
+# Is teen self reported physiological arousal related to teen self reported anxiety as measured by the SPAI-C? 
+(arousalanxiety <- ggplot(SAS.df, aes(TEEN_SAM_COMP_ALL_TASKS, spaicctot))+geom_point(aes(color=GROUPAB)))
+
+# Do teens who belong in the clinical sample report having significantly higher arousal than teens in the community sample? 
+mean.arousal.A <-mean(SAS.df$TEEN_SAM_COMP_ALL_TASKS[SAS.df$GROUPAB=="Community sample"])
+mean.arousal.B <-mean(SAS.df$TEEN_SAM_COMP_ALL_TASKS[SAS.df$GROUPAB=="Clinical sample"])
+grouping <- c("Community sample", "Clinical sample")
+means.arousal <- c(mean.arousal.A, mean.arousal.B)
+grouparousal <- data.frame(grouping, means.arousal)
+
+(arousalplot <- ggplot(grouparousal, aes(grouping, means.arousal))+geom_bar(stat="identity", aes(fill=grouping)))
+
+# We can also group teens by classifying them along cut off scores (at or above 18) for the SPAI-C, suggesting they have probable social anxiety disorder. I will make a new grouping variable to sort each participant. Are teens who scored above the cut off scores scoring higher on the SAFE than teens who were below the cut off score? 
+(mean.SAFE.Above <-mean(SAS.df$SAFE_TOTAL_C[SAS.df$SPAICCUTOFF=="Above cutoff"]))
+(mean.SAFE.Below <-mean(SAS.df$SAFE_TOTAL_C[SAS.df$SPAICCUTOFF=="Below cutoff"]))
+groupingSAFE <- c("Above cutoff", "Below cutoff")
+means.SAFE <- c(mean.SAFE.Above, mean.SAFE.Below)
+SAFEcut <- data.frame(groupingSAFE, means.SAFE)
+
+(SAFEplot <- ggplot(SAFEcut, aes(groupingSAFE, means.SAFE))+geom_bar(stat="identity", aes(fill=groupingSAFE)))
+```
+
+5. Fiddle with colors, axis labels, themes, etc. until the plot looks "publication ready" to you.  Try to change at least one thing per plot.
+
+```{r}
+new1<- arousalanxiety+
+       xlab("Teen Self Report Arousal")+
+       ylab("Teen Self Reported Anxiety (SPAI-C)")+
+       ggtitle("Teen Arousal and Anxiety")+
+       scale_color_brewer(palette = "Pastel1", name="Sample Grouping")+
+       theme(plot.title = element_text(hjust = 0.5))
+
+new2<- arousalplot+
+       xlab("Sample grouping")+
+       ylab("Mean Teen Self Report Arousal")+
+       ggtitle("Teen Arousal by Sample Group")+
+       scale_fill_brewer(palette = "Spectral", name="Sample Grouping")+
+       theme(plot.title = element_text(hjust = 0.5)) 
+
+new3<- SAFEplot+
+       xlab("SPAI-C Cutoff Group")+
+       ylab("Mean Teen Self Reported Safety Behaviors (SAFE)")+
+       ggtitle("Teen Safety Behaviors by SPAI-C Cutoff Groupings")+
+       scale_fill_brewer(palette = "Dark2",name="SPAI-C Cutoff Grouping")+
+       theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+6. Save all plots to a format that you could use in a paper.  HINT: PNG works well for pasting into Word documents.
+
+```{r}
+png("HW7plot1.png")
+plot(new1)
+dev.off()
+png("HW7plot2.png")
+plot(new2)
+dev.off()
+png("HW7plot3.png")
+plot(new3)
+dev.off()
+png("HW7plot4.png")
+plot(arousalanxiety)
+dev.off()
+png("HW7plot5.png")
+plot(arousalplot)
+dev.off()
+png("HW7plot6.png")
+plot(SAFEplot)
+dev.off()
+```
+
