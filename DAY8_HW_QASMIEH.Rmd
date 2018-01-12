@@ -1,0 +1,131 @@
+ ---
+title: "Day 8 Homework"
+output: html_document
+---
+
+Find two repetitive things that you would like to be able to do with your data.  This can be something having to do with coding variables, or saving plots, or running an analysis multiple times on different subsets, etc. etc.  Just try to find something where you would normally need to "copy and paste" sections of code, varying only one or two things.  Figure out how to use a loop to accomplish this.  
+
+For BOTH of these things, take the following steps:
+
+1. Articulate what you want to do (verbally)
+
+2. Give some code that illustrates the "copy and paste" method.  This can just show a couple of steps.  That is, if you would be running through a bunch of iterations, just copy and paste a couple of times, not everything.
+
+3. Work this code into a loop format, so that no copy & paste is neccesary.  You will need to set up a "counter" variable that cycles through various values (which do not have to be numeric), changing with every pass through the loop.  But you may also need to make other changes to your code to accommodate the loop.
+
+As usual, send me your .Rmd file with any data I need to replicate your results.
+
+```{r}
+#setting up dataset
+#libraries
+library(haven)
+library(ggplot2)
+
+#reading dataset
+SAS.data <- read_sav("QASMIEH_DATASET_PSYC798W.sav")
+
+#making dataframe of only variables of interest
+my.SAS <- c("MASTER_ID","GROUPAB","SAFE_TOTAL_C","SAFE_TOTAL_P",
+            "spaicctot","spaicptot","TOTALSIAS_C", "TOTALSIAS_P", 
+            "bdisctot", "bdisptot", "ICU_C_TOT", "ICU_P_TOT",   
+            "TEEN_SAM_COMP_ALL_TASKS")
+
+SAS.df <- SAS.data[,my.SAS]
+SAS.df$GROUPAB <- as.factor(SAS.df$GROUPAB)
+levels(SAS.df$GROUPAB) <- c("Community sample", "Clinical sample")
+
+#making new variable
+SAS.df$SPAICCUTOFF <- NA
+SAS.df$SPAICCUTOFF <- ifelse(SAS.df$spaicctot>=18, "Above cutoff", "Below cutoff")
+SAS.df$SPAICCUTOFF <- as.factor(SAS.df$SPAICCUTOFF)
+
+#reordering so factor variables are first
+SAS.df <- SAS.df[c(1,2,14,3,4,5,6,7,8,9,10,11,12,13)]
+head(SAS.df)
+
+```
+
+
+```{r}
+#Goal: make a scatter plot of participant depression and anxiety scores, based on group membership- only needs 2 iterations
+
+#"Copy Paste Code"
+(GROUPA.plot <- ggplot(SAS.df[SAS.df$GROUPAB=="Community sample",],aes(bdisctot,spaicctot))+
+    xlab("Mean Teen BDI score")+
+    ylab("Mean Teen SPAI-C score")+
+    theme(plot.title = element_text(hjust = 0.5))+ 
+    ggtitle("Community sample Depression and Anxiety")+
+    geom_point())
+
+(GROUPB.plot <- ggplot(SAS.df[SAS.df$GROUPAB=="Clinical sample",],aes(bdisctot,spaicctot))+
+    xlab("Mean Teen BDI score")+
+    ylab("Mean Teen SPAI-C score")+
+    theme(plot.title = element_text(hjust = 0.5))+ 
+    ggtitle("Clinical sample Depression and Anxiety")+
+    geom_point())
+
+pdf("CopyPaste.pdf")
+plot(GROUPA.plot)
+plot(GROUPB.plot)
+dev.off()
+
+#Loop Code
+pdf("AnxietyDepression.pdf")
+
+for(this.grouping in c("Community sample", "Clinical sample")) {
+  print(ggplot(SAS.df[SAS.df$GROUPAB==this.grouping,],
+    aes(bdisctot,spaicctot))+
+    xlab("Mean Teen BDI score")+
+    ylab("Mean Teen SPAI-C score")+
+    theme(plot.title = element_text(hjust = 0.5))+ 
+    ggtitle(paste(this.grouping, "Depression and Anxiety"))+
+    geom_point())
+  
+}
+dev.off()
+```
+
+```{r}
+#Goal: make a scatter plot of participant callous-unemotional traits and arousal scores, based on SPAIC cut off groups- still only needs 2 iterations
+
+#"Copy Paste Code"
+(Above.plot <- ggplot(SAS.df[SAS.df$SPAICCUTOFF=="Above cutoff",],
+    aes(ICU_C_TOT,TEEN_SAM_COMP_ALL_TASKS))+
+    xlab("Total Teen ICU score")+
+    ylab("Mean Teen Arousal score")+
+    theme(plot.title = element_text(hjust = 0.5))+ 
+    ggtitle("Above cutoff Teen ICU and Arousal")+
+    geom_point())
+
+(Below.plot <- ggplot(SAS.df[SAS.df$SPAICCUTOFF=="Below cutoff",],
+    aes(ICU_C_TOT,TEEN_SAM_COMP_ALL_TASKS))+
+    xlab("Total Teen ICU score")+
+    ylab("Mean Teen Arousal score")+
+    theme(plot.title = element_text(hjust = 0.5))+ 
+    ggtitle("Below cutoff Teen ICU and Arousal")+
+    geom_point())
+
+pdf("CopyPaste2.pdf")
+plot(Above.plot)
+plot(Below.plot)
+dev.off()
+
+#Loop Code
+pdf("ICU_Arousal.pdf")
+
+for(this.grouping in levels(SAS.df$SPAICCUTOFF)) {
+  print(ggplot(SAS.df[SAS.df$SPAICCUTOFF==this.grouping,],
+    aes(ICU_C_TOT,TEEN_SAM_COMP_ALL_TASKS))+
+    xlab("Total Teen ICU score")+
+    ylab("Mean Teen Arousal score")+
+    theme(plot.title = element_text(hjust = 0.5))+ 
+    ggtitle(paste(this.grouping,"Teen ICU and Arousal"))+
+    geom_point())
+  
+}
+dev.off()
+
+
+
+```
+
