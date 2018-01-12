@@ -38,6 +38,7 @@ levels(SAS.df$GROUPAB) <- c("Community sample", "Clinical sample")
 SAS.df$SPAICCUTOFF <- NA
 SAS.df$SPAICCUTOFF <- ifelse(SAS.df$spaicctot>=18, "Above cutoff", "Below cutoff")
 SAS.df$SPAICCUTOFF <- as.factor(SAS.df$SPAICCUTOFF)
+levels(SAS.df$SPAICCUTOFF)
 
 #reordering so factor variables are first
 SAS.df <- SAS.df[c(1,2,14,3,4,5,6,7,8,9,10,11,12,13)]
