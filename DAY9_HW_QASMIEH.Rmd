@@ -1,0 +1,136 @@
+---
+title: "Day 9 Homework"
+output: html_document
+---
+
+0. Tell me about something you want to either review, or something new to cover.
+* split, apply, combine and summarize + group_by functions
+
+1. Use the `apply()` function to get the mean of several numerical columns, row-wise.  For example, imagine that you have three columns of numbers, and that you want to get the mean value for each row across the columns.  Use `apply()` to get this result and put it into a new column of your data frame.
+
+```{r}
+#setting up dataset
+library(haven)
+SAS.data <- read_sav("QASMIEH_DATASET_PSYC798W.sav")
+my.SAS <- c("MASTER_ID","GROUPAB","SAFE_TOTAL_C","SAFE_TOTAL_P",
+            "spaicctot","spaicptot","TOTALSIAS_C", "TOTALSIAS_P", 
+            "bdisctot", "bdisptot", "ICU_C_TOT", "ICU_P_TOT",   
+            "TEEN_SAM_COMP_ALL_TASKS")
+
+SAS.df <- SAS.data[,my.SAS]
+SAS.df$GROUPAB <- as.factor(SAS.df$GROUPAB)
+levels(SAS.df$GROUPAB) <- c("Community sample", "Clinical sample")
+
+```
+
+
+```{r}
+#creating mean SAFE score across informants
+SAS.df$mean.SAFE <- apply(SAS.df[,4:5], MARGIN = 1, FUN= mean, na.rm=TRUE)
+
+```
+
+2. Write a small function. It can do something very, very simple.  It needs to have at least one argument.  Describe what you want it to do, write the function, and then use it on a few different cases.
+
+```{r}
+#Function calculates the difference someone's SPAI-C score is away from the clinical cut off score of 18
+cutoff.diff <- function(x) {
+  output <- abs(x - 18) 
+  output
+}
+cutoff.diff(20)
+cutoff.diff(3)
+cutoff.diff(18)
+```
+
+3. Go back to the two things you tried to use loops for in Day 8 Homework.  Pick ONE of these things to try to "vectorize."  If you decide that something else would work better, describe some new thing you're trying to do that could be accomplished with a loop. Depending on what you were doing, this may use the `apply()` function, or the combination of `group_by()` and `do()`.  Either of these methods will likely require you to write a function first.  
+
+So first, create a function that will accomplish what you want *one* time.  Then use one of the "vectorizing" functions to apply your new function in an iterative way.  If you want your function to be applied to each row in your data frame, use `apply()` (or `rowwise()` and `mutate()`).  Otherwise, use `group_by()` to specify how to "break up" your date into "chunks", and pass your function to `do()` in order to apply your function to each chunk.
+
+Note that if you use `do()` and your function returns a data frame, the results will be a data frame.  But if you instead return some other object (like a ggplot object, or a regression object or a t-test object or something like that), then the result will be a list containing those objects.
+
+* #Because my loop code was just making graphs, I'll instead "vectorize" a function based off a loop where I store the correlation between the teen SAFE and every other measure in the dataset. The code chunk below was my first shot at the code but it wasn't working by way of  "'max' not meaningful for factors". The code chunk after that has the loop that runs but I'm not too sure why as I repurposed it from here: http://environmentalcomputing.net/using-loops/. The last code chunk is my attempt at vectorizing the successful correlation function/loop but it still didn't run, I suspect I'm making a mistake in how I call the arguments for the cor.text function but I've tried several methods and none work. 
+
+```{r}
+#first failed attempt...
+cor.results <- cor.test(SAS.df$SAFE_TOTAL_C, SAS.df$SAFE_TOTAL_P)
+est.val <- cor.results$estimate
+stat.val <- cor.results$statistic
+p.val <- cor.results$p.value
+
+cor.table <- data.frame (r = est.val,
+                         t = stat.val,
+                         p.value = p.val)
+cor.table
+
+#code needs to vary at the name of the measure being correlated with the teen safe
+
+all.SAS.measures <- c("SAFE_TOTAL_P",
+            "spaicctot","spaicptot","TOTALSIAS_C", "TOTALSIAS_P", 
+            "bdisctot", "bdisptot", "ICU_C_TOT", "ICU_P_TOT",   
+            "TEEN_SAM_COMP_ALL_TASKS")
+
+cor.tableX <- data.frame(measure = all.SAS.measures,
+                        r = NA,
+                        t = NA,
+                        p.value = NA)
+cor.tableX
+for(i in nrow(cor.tableX)) {
+  corr.results <- cor(SAS.df[,"SAFE_TOTAL_C"], SAS.df[,i], method="pearson")
+  est.val <- cor.results$estimate
+  stat.val <- cor.results$statistic
+  p.val <- cor.results$p.value
+  
+  cor.tableX[cor.tableX$measure,
+                c("r", "t", "p.val")] <- c(est.val, stat.val, p.val) 
+                      
+}
+cor.tableX
+
+```
+
+```{r}
+library(dplyr)
+
+all.SAS.measures <- select(SAS.df, SAFE_TOTAL_C, SAFE_TOTAL_P:TEEN_SAM_COMP_ALL_TASKS)
+rows<- ncol(all.SAS.measures)-1
+cor.table2 <- data.frame(Measure=character(length=rows), 
+                 correlation.with.teen.safe=numeric(length=rows), 
+                 stringsAsFactors=F)
+cor.table2
+
+for(measure in 1:rows) {
+  temp1 <- colnames(all.SAS.measures[measure+1])      
+  temp2 <- cor(all.SAS.measures[,1], all.SAS.measures[,measure+1], method="pearson")
+                                          
+  cor.table2[measure,1] <- temp1               
+  cor.table2[measure,2] <- temp2               
+}
+cor.table2
+
+
+```
+
+```{r}
+get.corr <- function(data,var1,var2) {
+  data <- as.data.frame(data)
+  temp1 <- colnames(data[var2])      
+  temp2 <- cor(dat[,var1], data[,var2], method="pearson")
+                                          
+  cor.table2[var2,1] <- temp1               
+  cor.table2[var2,2] <- temp2               
+}
+
+get.corr(data = SAS.df, var1 = "SAFE_TOT_C", var2 = "SAFE_TOT_P")
+
+group_by(SAS.df, GROUPAB) %>%
+  do(get.corr(., var1 = "SAFE_TOT_c", var2= "SAFE_TOT_P")) 
+
+
+
+  
+  
+
+
+```
+
