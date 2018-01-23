@@ -1,0 +1,135 @@
+---
+title: "SAFE BIFACTOR"
+author: "QasmiehNoor"
+date: "January 5, 2018"
+output: html_document
+---
+```{r}
+library(lavaan)
+library(haven)
+
+#reading in the data
+SAS.data <- read_spss("SAS_MASTER_DATASET_06302017.sav")
+```
+
+#making dataframe of only the teen SAFE items
+```{r}
+SAFE.items <- c("SAFE_C_1","SAFE_C_2", "SAFE_C_3","SAFE_C_4", "SAFE_C_5", "SAFE_C_6","SAFE_C_7","SAFE_C_8","SAFE_C_9","SAFE_C_10",
+                "SAFE_C_11","SAFE_C_12","SAFE_C_13","SAFE_C_14","SAFE_C_15","SAFE_C_16","SAFE_C_17","SAFE_C_18","SAFE_C_19",
+                "SAFE_C_20","SAFE_C_21","SAFE_C_22","SAFE_C_23","SAFE_C_24","SAFE_C_25","SAFE_C_26","SAFE_C_27","SAFE_C_28",
+                "SAFE_C_29","SAFE_C_30","SAFE_C_31", "SAFE_C_32")
+
+SAS.Teen.SAFE <- SAS.data[,SAFE.items]
+SAS.Teen.SAFE <- as.data.frame(SAS.Teen.SAFE)
+```
+
+
+###Checking normality of each item
+```{r}
+#install.packages("MVN")
+library(MVN)
+
+SAFE.items1 <- c("SAFE_C_1","SAFE_C_2", "SAFE_C_3","SAFE_C_4", "SAFE_C_5", "SAFE_C_6","SAFE_C_7","SAFE_C_8")
+SAS.Teen.SAFE1 <- SAS.data[,SAFE.items1]
+
+SAFE.items2 <- c("SAFE_C_9","SAFE_C_10","SAFE_C_11","SAFE_C_12","SAFE_C_13","SAFE_C_14","SAFE_C_15","SAFE_C_16")
+SAS.Teen.SAFE2 <- SAS.data[,SAFE.items2]
+
+SAFE.items3 <- c("SAFE_C_17","SAFE_C_18","SAFE_C_19","SAFE_C_20","SAFE_C_21","SAFE_C_22","SAFE_C_23","SAFE_C_24")
+SAS.Teen.SAFE3 <- SAS.data[,SAFE.items3]
+
+SAFE.items4 <- c("SAFE_C_25","SAFE_C_26","SAFE_C_27","SAFE_C_28","SAFE_C_29","SAFE_C_30","SAFE_C_31", "SAFE_C_32")
+SAS.Teen.SAFE4 <- SAS.data[,SAFE.items4]
+
+uniPlot(SAS.Teen.SAFE1, type = "histogram")
+#items 1, 5, 6, 7, 8 are positively skewed
+
+uniPlot(SAS.Teen.SAFE2, type = "histogram")
+#items 9,11,12,13,15,16 are positively skewed
+
+uniPlot(SAS.Teen.SAFE3, type = "histogram")
+#items 17,18,21,22,23,24 are positively skewed
+
+uniPlot(SAS.Teen.SAFE4, type = "histogram")
+#items 26,28,29,30,31 are positively skewed
+
+```
+
+###Log transforming each positively skewed item
+```{r}
+SAS.Teen.SAFE$log.SAFE_C_1 <-log(SAS.Teen.SAFE$SAFE_C_1)
+SAS.Teen.SAFE$log.SAFE_C_5<-log(SAS.Teen.SAFE$SAFE_C_5)
+SAS.Teen.SAFE$log.SAFE_C_6<-log(SAS.Teen.SAFE$SAFE_C_6)
+SAS.Teen.SAFE$log.SAFE_C_7<-log(SAS.Teen.SAFE$SAFE_C_7)
+SAS.Teen.SAFE$log.SAFE_C_8<-log(SAS.Teen.SAFE$SAFE_C_8)
+SAS.Teen.SAFE$log.SAFE_C_9<-log(SAS.Teen.SAFE$SAFE_C_9)
+SAS.Teen.SAFE$log.SAFE_C_11<-log(SAS.Teen.SAFE$SAFE_C_11)
+SAS.Teen.SAFE$log.SAFE_C_12<-log(SAS.Teen.SAFE$SAFE_C_12)
+SAS.Teen.SAFE$log.SAFE_C_13<-log(SAS.Teen.SAFE$SAFE_C_13)
+SAS.Teen.SAFE$log.SAFE_C_15<-log(SAS.Teen.SAFE$SAFE_C_15)
+SAS.Teen.SAFE$log.SAFE_C_16<-log(SAS.Teen.SAFE$SAFE_C_16)
+SAS.Teen.SAFE$log.SAFE_C_17<-log(SAS.Teen.SAFE$SAFE_C_17)
+SAS.Teen.SAFE$log.SAFE_C_18<-log(SAS.Teen.SAFE$SAFE_C_18)
+SAS.Teen.SAFE$log.SAFE_C_21<-log(SAS.Teen.SAFE$SAFE_C_21)
+SAS.Teen.SAFE$log.SAFE_C_22<-log(SAS.Teen.SAFE$SAFE_C_22)
+SAS.Teen.SAFE$log.SAFE_C_23<-log(SAS.Teen.SAFE$SAFE_C_23)
+SAS.Teen.SAFE$log.SAFE_C_24<-log(SAS.Teen.SAFE$SAFE_C_24)
+SAS.Teen.SAFE$log.SAFE_C_26<-log(SAS.Teen.SAFE$SAFE_C_26)
+SAS.Teen.SAFE$log.SAFE_C_28<-log(SAS.Teen.SAFE$SAFE_C_28)
+SAS.Teen.SAFE$log.SAFE_C_29<-log(SAS.Teen.SAFE$SAFE_C_29)
+SAS.Teen.SAFE$log.SAFE_C_30<-log(SAS.Teen.SAFE$SAFE_C_30)
+SAS.Teen.SAFE$log.SAFE_C_31<-log(SAS.Teen.SAFE$SAFE_C_31)
+
+
+```
+
+
+
+### Defining the model (general- made of all the items; factor1= restrictive behaviors; factor2=manipulative behaviors, making latent constructs orthogonal)
+```{r}
+SAFE.model <- 'general.factor  =~ log.SAFE_C_1+SAFE_C_2+SAFE_C_3+SAFE_C_4+log.SAFE_C_5+log.SAFE_C_6+log.SAFE_C_7+log.SAFE_C_8+log.SAFE_C_9+
+                                  SAFE_C_10+log.SAFE_C_11+log.SAFE_C_12+log.SAFE_C_13+SAFE_C_14+log.SAFE_C_15+log.SAFE_C_16+log.SAFE_C_17+
+                                  log.SAFE_C_18+SAFE_C_19+SAFE_C_20+log.SAFE_C_21+log.SAFE_C_22+log.SAFE_C_23+log.SAFE_C_24+SAFE_C_25+
+                                  log.SAFE_C_26+SAFE_C_27+log.SAFE_C_28 +log.SAFE_C_29+log.SAFE_C_30+log.SAFE_C_31+SAFE_C_32
+
+               restrictive     =~ log.SAFE_C_1+SAFE_C_2+SAFE_C_3+SAFE_C_4+log.SAFE_C_6+log.SAFE_C_8+SAFE_C_10+SAFE_C_14+log.SAFE_C_18+
+                                  SAFE_C_19+SAFE_C_20+SAFE_C_25+log.SAFE_C_26+log.SAFE_C_31+SAFE_C_32
+
+               manipulative    =~ log.SAFE_C_5+log.SAFE_C_7+log.SAFE_C_9+log.SAFE_C_11+log.SAFE_C_12+log.SAFE_C_13+log.SAFE_C_15+log.SAFE_C_16+
+                                  log.SAFE_C_17+log.SAFE_C_21+log.SAFE_C_22+log.SAFE_C_23+log.SAFE_C_24+SAFE_C_27+log.SAFE_C_28+log.SAFE_C_29+
+                                  log.SAFE_C_30
+
+               general.factor  ~~ 0*restrictive
+               general.factor  ~~ 0*manipulative
+               restrictive     ~~ 0*manipulative'
+```
+
+
+### Calculating the fit of the  model
+```{r}
+SAFE.modelfit <- cfa(SAFE.model, data = SAS.Teen.SAFE, std.lv = TRUE, information="observed")
+summary(SAFE.modelfit, fit.measures = TRUE, standardize = TRUE)
+inspect(SAFE.modelfit,standardize = TRUE )
+
+ls()
+```
+
+###Making tree diagram
+```{r}
+#install.packages("semPlot")
+library(semPlot)
+SAFEtree <- semPaths(SAFE.modelfit,  "model", "std", bifactor = "general.factor", layout = "tree2", residuals = FALSE, exoCov = FALSE,title = FALSE)
+title("SAFE Bifactor Model")
+```
+
+###Interpretation of model fit
+
+* After log transforming responses to the highly skewed items, I fit the teen SAFE data to a bifactor model. This model has a general factor as well as two additional latent factors, one representing restrictive behaviors and the other representing behaviors that manipulate the environment. 
+* Some key indices that describe the model's fit to the data are the Chi square, the CFI, and the TLI, and the root mean square error of approximation (RMSEA). The p value with the associated Chi square is  <.0001; CFI = 0.826, TLI= .800, RMSEA = 0.076 (90%CI = 0.064, 0.087). 
+* Convention dictates that the CFI and TLI indices are not informative if the RMSEA is .158, therefore we cannot interpret these indices. Instead, looking at the RMSEA, we see that it is low but according to conventions of the field, it's not low enough and this suggests a mediocre fit. 
+* I would suspect this model fit to be weaker than anticipated either due to normality of the data or perhaps the proposed two factors could be redefined to fit more closely to the data. A warning is also displayed when running the CFA, specifically that negative variances are observed. Again, this suggests either the data demands additional transformation or that the model needs redefining. 
+
+
+
+
+
